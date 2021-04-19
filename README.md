@@ -1,7 +1,10 @@
 # StoRIR: Stochastic Room Impulse Response Generation for Audio Data Augmentation
 
 This is an installable package containing code described in [StoRIR paper](https://arxiv.org/abs/2008.07231) presented on *Interspeech 2020*.
-For the example of use see [example.py file](/example.py).
+For the example of use see [example.py file](example.py).
+
+Contact point:
+- Piotr Masztalski (p.masztalski@samsung.com)
 
 Original authors:
 - Piotr Masztalski (p.masztalski@samsung.com)
