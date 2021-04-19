@@ -12,7 +12,6 @@ setup(
     install_requires=['numpy>=1.19'],
 
     classifiers=[
-        'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License ',
         'Operating System :: POSIX :: Linux',
