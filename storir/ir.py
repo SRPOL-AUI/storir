@@ -1,5 +1,5 @@
 import numpy as np
-import storir.utils as utils
+import storir.audio_utils as utils
 
 
 class ImpulseResponse:
@@ -10,7 +10,7 @@ class ImpulseResponse:
             edt: float,
             itdg: float,
             er_duration: float,
-            drr: float = None,
+            drr: float,
     ):
         """
         Energetic stochastic impulse response.
@@ -19,12 +19,13 @@ class ImpulseResponse:
             edt: early decay time [ms]
             itdg: initial time delay gap [ms]
             er_duration: early reflections duration [ms]
+            drr: direct to reverberant energy ratio [dB]
         """
         self.rt60 = rt60
         self.edt = edt
         self.itdg = itdg
         self.er_duration = er_duration
-        self.drr = utils.calculate_drr(rt60) if drr is None else drr
+        self.drr = drr
         if self.rt60 < self.edt:
             raise ValueError('RT60 needs to be longer than EDT.')
 
@@ -87,8 +88,8 @@ class ImpulseResponse:
         drr_high = self.drr + .5
         randomization_epochs = 0
 
-        current_drr = utils.calculate_direct_to_reverberant_ratio(data=y,
-                                                                  direct_sound_idx=direct_sound_idx)
+        current_drr = utils.calculate_drr_energy_ratio(data=y,
+                                                       direct_sound_idx=direct_sound_idx)
 
         while not drr_low <= current_drr:
 
@@ -108,8 +109,8 @@ class ImpulseResponse:
                                           rate=1 / 10)
 
             previous_drr = current_drr
-            current_drr = utils.calculate_direct_to_reverberant_ratio(data=y,
-                                                                      direct_sound_idx=direct_sound_idx)
+            current_drr = utils.calculate_drr_energy_ratio(data=y,
+                                                           direct_sound_idx=direct_sound_idx)
 
             # if thinning out reflections did not decrease the DRR it means
             # that the maximal DRR possible has been reached
