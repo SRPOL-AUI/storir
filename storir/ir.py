@@ -27,7 +27,7 @@ class ImpulseResponse:
         self.itdg = itdg
         self.er_duration = er_duration
         self.drr = drr
-        if self.rt60 < self.edt:
+        if self.rt60 <= self.edt:
             raise ValueError('RT60 needs to be longer than EDT.')
 
     def generate(self, sampling_rate):
@@ -39,7 +39,7 @@ class ImpulseResponse:
     def _get_noise(self, sampling_rate):
         # initialize random noise (10 dB range)
         num_samples = self._get_num_samples(self.rt60, sampling_rate)
-        noise = (np.random.random_sample(size=num_samples) * 10) - 5
+        noise = np.random.random_sample(size=num_samples) * 10 - 5
         return noise
 
     def _get_edt_and_rt60_slope(self, y, sampling_rate):
@@ -51,18 +51,14 @@ class ImpulseResponse:
         rt60_num_samples = self._get_num_samples(self.rt60, sampling_rate)
         er_duration_num_samples = self._get_num_samples(self.er_duration, sampling_rate)
 
-        for k in range(edt_num_samples):
-            if k == edt_num_samples - 1:  # last sample of EDT
-                # decrease the level of the rest of the random sequence
-                # later to be shaped based on the rt60 value
-                y[k:] -= k * 10 / edt_num_samples
-                break
-            # shape the EDT slope of the IR
-            y[k] -= k * 10 / edt_num_samples
+        # shape the EDT slope of the IR
+        y[:edt_num_samples - 1] -= np.arange(0, edt_num_samples - 1)
+        y[edt_num_samples - 1:] -= (edt_num_samples - 1)  # last sample of EDT
+        y = y * 10 / edt_num_samples
 
-        for k in range(edt_num_samples, rt60_num_samples):
-            # shape the RT60 slope of the ir (after EDT)
-            y[k] -= (k - (edt_num_samples + 1)) * 50 / rt60_num_samples
+        # shape the RT60 slope of the IR (after EDT)
+        k = np.arange(edt_num_samples, rt60_num_samples)
+        y[edt_num_samples:rt60_num_samples] -= (k - (edt_num_samples + 1)) * 50 / rt60_num_samples
 
         y -= max(y)  # change scale to dBFS (0 dB becomes the maximal level)
         y = decibels_to_gain(y) ** 2
