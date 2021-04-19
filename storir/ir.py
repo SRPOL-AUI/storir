@@ -83,14 +83,13 @@ class ImpulseResponse:
         # create a 1 dB margin for error (we will never hit the exact drr value)
         drr_low = self.drr - .5
         drr_high = self.drr + .5
-        randomization_epochs = 0
 
         current_drr = calculate_drr_energy_ratio(y=y, direct_sound_idx=direct_sound_idx)
 
-        while not drr_low <= current_drr:
+        if current_drr > drr_high:
+            return y
 
-            if randomization_epochs == 0 and current_drr > drr_high:
-                break
+        while drr_low > current_drr:
 
             # thin out early reflections
             y = thin_out_reflections(y=y,
@@ -109,10 +108,8 @@ class ImpulseResponse:
 
             # if thinning out reflections did not decrease the DRR it means
             # that the maximal DRR possible has been reached
-            if previous_drr == current_drr:
+            if np.isclose(previous_drr, current_drr):
                 break
-
-            randomization_epochs += 1
 
         return y
 
@@ -125,7 +122,6 @@ class ImpulseResponse:
         # (if the parameters are set logically it will never happen)
         itdg_num_samples = self._get_num_samples(self.itdg, sampling_rate)
         itdg_end_idx = min(direct_sound_idx + 1 + itdg_num_samples, len(y) - 1)
-
         y[direct_sound_idx + 1:itdg_end_idx] = 0
         return y
 
