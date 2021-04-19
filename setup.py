@@ -6,6 +6,8 @@ setup(
     name='storir',
     version='0.1.0',
     description='Python package with code described in https://arxiv.org/abs/2008.07231.',
+    author='Piotr Masztalski',
+    author_email='p.masztalski@samsung.com',
     url='https://github.com/SRPOL-AUI/storir',
     license='MIT License',
     packages=setuptools.find_packages(),
