@@ -1,5 +1,6 @@
 import numpy as np
-import storir.audio_utils as utils
+from storir.audio_utils import decibels_to_gain
+from storir.rir_utils import calculate_drr_energy_ratio, thin_out_reflections
 
 
 class ImpulseResponse:
@@ -64,7 +65,7 @@ class ImpulseResponse:
             y[k] -= (k - (edt_num_samples + 1)) * 50 / rt60_num_samples
 
         y -= max(y)  # change scale to dBFS (0 dB becomes the maximal level)
-        y = utils.decibels_to_gain(y) ** 2
+        y = decibels_to_gain(y) ** 2
 
         # assign values to specific time points in the IR
         direct_sound_idx = np.argmax(y)
@@ -88,8 +89,7 @@ class ImpulseResponse:
         drr_high = self.drr + .5
         randomization_epochs = 0
 
-        current_drr = utils.calculate_drr_energy_ratio(data=y,
-                                                       direct_sound_idx=direct_sound_idx)
+        current_drr = calculate_drr_energy_ratio(y=y, direct_sound_idx=direct_sound_idx)
 
         while not drr_low <= current_drr:
 
@@ -97,20 +97,19 @@ class ImpulseResponse:
                 break
 
             # thin out early reflections
-            y = self._thin_out_reflection(y=y,
-                                          start_idx=early_ref_start,
-                                          end_idx=early_ref_end,
-                                          rate=1/8)
+            y = thin_out_reflections(y=y,
+                                     start_idx=early_ref_start,
+                                     end_idx=early_ref_end,
+                                     rate=1/8)
 
             # thin out reverberation tail
-            y = self._thin_out_reflection(y=y,
-                                          start_idx=early_ref_end,
-                                          end_idx=len(y) - 1,
-                                          rate=1 / 10)
+            y = thin_out_reflections(y=y,
+                                     start_idx=early_ref_end,
+                                     end_idx=len(y) - 1,
+                                     rate=1 / 10)
 
             previous_drr = current_drr
-            current_drr = utils.calculate_drr_energy_ratio(data=y,
-                                                           direct_sound_idx=direct_sound_idx)
+            current_drr = calculate_drr_energy_ratio(y=y, direct_sound_idx=direct_sound_idx)
 
             # if thinning out reflections did not decrease the DRR it means
             # that the maximal DRR possible has been reached
@@ -132,30 +131,6 @@ class ImpulseResponse:
         itdg_end_idx = min(direct_sound_idx + 1 + itdg_num_samples, len(y) - 1)
 
         y[direct_sound_idx + 1:itdg_end_idx] = 0
-        return y
-
-    @staticmethod
-    def _thin_out_reflection(y, start_idx, end_idx, rate):
-        """
-        Randomly deletes a fraction of sound rays in a specified time window.
-        Args:
-            start_idx: time window starting sample index
-            end_idx: time window ending sample index
-            rate: the fraction of sound rays to delete
-
-        Returns:
-
-        """
-        detected_ray_indices = np.nonzero(y)[0]
-        # include only the desired part of the IR
-        detected_ray_indices = [idx for idx in detected_ray_indices if
-                                start_idx <= idx <= end_idx]
-        rays_to_delete_indices = np.random.choice(detected_ray_indices,
-                                                  int(len(detected_ray_indices) * rate),
-                                                  replace=False)
-
-        for idx in rays_to_delete_indices:
-            y[idx] = 0
         return y
 
     @staticmethod
